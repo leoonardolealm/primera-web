@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro de Datos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="page-index">
+
+  <div class="noise"></div>
+
+  <main class="center-wrap">
+    <header>
+      <p class="label">SISTEMA DE REGISTRO</p>
+      <h1>INGRESA<br><em>UN DATO</em></h1>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-inner" style="width: {{ (count / total * 100) | round(1) }}%"></div>
+      </div>
+      <p class="progress-text">
+        <span class="count-num">{{ count }}</span> / {{ total }} registros
+        {% if count >= total %}
+          — <a href="/dashboard" class="link-dash">ver dashboard →</a>
+        {% endif %}
+      </p>
+    </header>
+
+    <form action="/agregar" method="POST" class="card-form">
+      <div class="field">
+        <label for="edad">EDAD</label>
+        <input type="number" id="edad" name="edad" min="1" max="120" placeholder="ej. 24" required />
+      </div>
+
+      <div class="field">
+        <label>GÉNERO</label>
+        <div class="radio-group">
+          <label class="radio-card">
+            <input type="radio" name="genero" value="Masculino" required />
+            <span>♂ Masculino</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="genero" value="Femenino" />
+            <span>♀ Femenino</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="genero" value="Otro" />
+            <span>⊕ Otro</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">GUARDAR →</button>
+    </form>
+
+    <div class="recent-entries">
+      <form action="/resetear" method="POST" onsubmit="return confirm('¿Resetear todos los datos?')">
+        <button type="submit" class="btn-reset">↺ Resetear base de datos</button>
+      </form>
+      <a href="/api/datos" target="_blank" class="btn-api">{ } Ver API JSON</a>
+    </div>
+  </main>
+
+</body>
+</html>

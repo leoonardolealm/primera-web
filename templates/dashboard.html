@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="page-dashboard">
+
+  <div class="noise"></div>
+
+  <div class="dash-wrap">
+    <header class="dash-header">
+      <div>
+        <p class="label">ANÁLISIS COMPLETO</p>
+        <h1>DASH<em>BOARD</em></h1>
+        <p class="sub">{{ count }} registros · generado automáticamente</p>
+      </div>
+      <div class="dash-actions">
+        <a href="/" class="btn-back">← Nuevo registro</a>
+        <a href="/api/datos" target="_blank" class="btn-api">{ } API</a>
+        <a href="/exportar-csv" class="btn-submit" style="text-decoration:none; padding: 10px 18px; font-size:0.85rem;">
+  ↓ Descargar CSV
+</a>
+      </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <section class="kpi-row" id="kpis">
+      <div class="kpi-card" style="--accent: #ff6b35">
+        <p class="kpi-label">PROMEDIO EDAD</p>
+        <p class="kpi-val" id="kpi-avg">—</p>
+      </div>
+      <div class="kpi-card" style="--accent: #00d4aa">
+        <p class="kpi-label">EDAD MÍNIMA</p>
+        <p class="kpi-val" id="kpi-min">—</p>
+      </div>
+      <div class="kpi-card" style="--accent: #7c6cff">
+        <p class="kpi-label">EDAD MÁXIMA</p>
+        <p class="kpi-val" id="kpi-max">—</p>
+      </div>
+      <div class="kpi-card" style="--accent: #ffd166">
+        <p class="kpi-label">TOTAL REGISTROS</p>
+        <p class="kpi-val" id="kpi-total">—</p>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts-grid">
+      <div class="chart-card chart-wide">
+        <p class="chart-title">DISTRIBUCIÓN DE EDADES</p>
+        <canvas id="chartEdades"></canvas>
+      </div>
+      <div class="chart-card">
+        <p class="chart-title">GÉNERO</p>
+        <canvas id="chartGenero"></canvas>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section class="table-section">
+      <p class="chart-title">BASE DE DATOS COMPLETA</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>EDAD</th>
+              <th>GÉNERO</th>
+              <th>FECHA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row[0] }}</td>
+              <td>{{ row[1] }}</td>
+              <td>
+                <span class="badge badge-{{ row[2] | lower }}">{{ row[2] }}</span>
+              </td>
+              <td class="mono">{{ row[3][:16] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="dash-footer">
+      <form action="/resetear" method="POST" onsubmit="return confirm('¿Resetear todos los datos?')">
+        <button type="submit" class="btn-reset">↺ Resetear y volver a capturar</button>
+      </form>
+    </footer>
+  </div>
+
+  <script>
+    fetch("/api/stats")
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById("kpi-avg").textContent = d.edad_promedio + " años";
+        document.getElementById("kpi-min").textContent = d.edad_min;
+        document.getElementById("kpi-max").textContent = d.edad_max;
+        document.getElementById("kpi-total").textContent = d.total;
+
+        // Bar chart — edades
+        const edadCounts = {};
+        d.edades.forEach(e => { edadCounts[e] = (edadCounts[e] || 0) + 1; });
+        const labels = Object.keys(edadCounts).sort((a,b) => a-b);
+        const vals = labels.map(l => edadCounts[l]);
+
+        new Chart(document.getElementById("chartEdades"), {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Frecuencia",
+              data: vals,
+              backgroundColor: "#7c6cff",
+              borderRadius: 6,
+              borderSkipped: false,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#aaa", font: { family: "Space Mono" } }, grid: { color: "#222" } },
+              y: { ticks: { color: "#aaa", font: { family: "Space Mono" }, stepSize: 1 }, grid: { color: "#222" } }
+            }
+          }
+        });
+
+        // Donut — género
+        new Chart(document.getElementById("chartGenero"), {
+          type: "doughnut",
+          data: {
+            labels: ["Masculino", "Femenino", "Otro"],
+            datasets: [{
+              data: [d.masculino, d.femenino, d.otro],
+              backgroundColor: ["#7c6cff", "#ff6b35", "#00d4aa"],
+              borderWidth: 0,
+              hoverOffset: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            cutout: "65%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { color: "#aaa", font: { family: "Space Mono", size: 11 }, padding: 16 }
+              }
+            }
+          }
+        });
+      });
+  </script>
+</body>
+</html>
